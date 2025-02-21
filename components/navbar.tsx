@@ -14,10 +14,30 @@ import { Input } from "@heroui/input";
 import { Kbd } from "@heroui/kbd";
 import NextLink from "next/link";
 import Image from "next/image";
+import React from "react";
+import {
+  Modal,
+  ModalContent,
+  ModalBody,
+  useDisclosure,
+  Autocomplete,
+  AutocompleteItem,
+  ModalHeader,
+} from "@heroui/react";
 
 import { siteConfig } from "@/config/site";
 import { ThemeSwitch } from "@/components/theme-switch";
 import "./navbartheme.css";
+import { fetchDistricts, fetchProvince } from "@/utils/fetchFormApi";
+
+interface District {
+  id: number;
+  name: string;
+}
+interface Province {
+  id: number;
+  name: string;
+}
 
 export const Navbar = () => {
   const [isProjectMenuOpen, setProjectMenuOpen] = useState(false); // State cho menu dự án
@@ -142,6 +162,55 @@ export const Navbar = () => {
       href: "/duan/LuxuryApartment",
     },
   ];
+  const [key, setValue] = React.useState<string | null>("");
+  const [isValid, setIsValid] = useState(true); // Example state to manage validatio
+  const [touched, setTouched] = React.useState(false);
+
+  const [provinceData, setProvinceData] = useState<any>(""); // Dữ liệu tỉnh
+  const [districtData, setDistrictData] = useState<any>(""); // Dữ liệu quận huyện
+  const [selectedProvince, setSelectedProvince] = useState<any>(""); // Tỉnh đã chọn
+  const [selectedDistrict, setSelectedDistrict] = useState<any>("");
+  const [loadingProvince, setLoadingProvince] = useState(false);
+  const [loadingDistrict, setLoadingDistrict] = useState(false);
+  const [errorProvince, setErrorProvince] = useState<string | null>(null);
+  const [errorDistrict, setErrorDistrict] = useState<string | null>(null);
+
+  useEffect(() => {
+    setLoadingProvince(true); // Bắt đầu loading
+    fetchProvince()
+      .then((response) => {
+        console.log(response);
+        setProvinceData(response.data);
+        setLoadingProvince(false); // Kết thúc loading
+        setErrorProvince(null); // Reset lỗi
+      })
+      .catch((error) => {
+        setErrorProvince("Không thể tải dữ liệu tỉnh. Vui lòng thử lại.");
+        setLoadingProvince(false); // Kết thúc loading
+        console.log(error);
+      });
+  }, []);
+
+  // Fetch quận huyện khi tỉnh thay đổi
+  useEffect(() => {
+    console.log("province",selectedProvince);
+    console.log("distric",selectedDistrict);
+    
+    if (!selectedProvince) return; // Không fetch nếu chưa chọn tỉnh
+
+    setLoadingDistrict(true); // Bắt đầu loading quận huyện
+    fetchDistricts(selectedProvince.data)
+      .then((results) => {
+        setDistrictData(results.data);
+        setLoadingDistrict(false); // Kết thúc loading
+        setErrorDistrict(null); // Reset lỗi
+      })
+      .catch((error) => {
+        setErrorDistrict("Không thể tải dữ liệu quận huyện. Vui lòng thử lại.");
+        setLoadingDistrict(false); // Kết thúc loading
+        console.log(error);
+      });
+  }, [selectedProvince]);
 
   // Dùng useEffect để thêm sự kiện click bên ngoài để đóng menu
   useEffect(() => {
@@ -161,6 +230,27 @@ export const Navbar = () => {
     };
   }, []);
 
+  const { isOpen, onOpen, onClose } = useDisclosure();
+  const [size, setSize] = React.useState("md");
+
+  const sizes = [
+    "xs",
+    "sm",
+    "md",
+    "lg",
+    "xl",
+    "2xl",
+    "3xl",
+    "4xl",
+    "5xl",
+    "full",
+  ];
+
+  const handleOpen = (size: any) => {
+    setSize(size);
+    onOpen();
+  };
+
   return (
     <div>
       <div className="container">
@@ -178,10 +268,10 @@ export const Navbar = () => {
             >
               <Image
                 alt="logo"
+                className="logo"
                 height={50}
                 src={"/lOGO SONAHA-04.jpg"}
                 width={50}
-                className="logo"
               />
               <p className="font-bold text-inherit">SONAHA</p>
             </NextLink>
@@ -194,10 +284,9 @@ export const Navbar = () => {
             </li>
             <li className="navbar-item">
               <button
-                aria-expanded={isProjectMenuOpen}
-                aria-haspopup="true"
-                className="cursor-pointer"
-                type="button"
+                aria-controls="project-menu"
+                aria-expanded={isProjectMenuOpen ? "true" : "false"}
+                className="p-0 bg-transparent"
                 onClick={toggleProjectMenu}
                 onKeyDown={handleKeyPress}
               >
@@ -206,24 +295,16 @@ export const Navbar = () => {
               {isProjectMenuOpen && (
                 <div
                   ref={projectMenuRef}
-                  className="absolute bg-white shadow-md mt-2"
-                  style={{ borderRadius: "5px" }}
+                  className="absolute bg-white shadow-md mt-2 rounded-md"
                 >
-                  <Listbox
-                    aria-label="Project List"
-                    className="lisbox"
-                    style={{ borderRadius: "5px" }}
-                  >
+                  <Listbox aria-label="Project List">
                     {projectMenuItems.map((item) => (
                       <ListboxItem
                         key={item.href}
-                        className="shietts"
+                        className="listbox-item"
                         href={item.href}
-                        value={item.href}
                       >
-                        <Link size="sm">
-                          <div className="title-link">{item.label}</div>
-                        </Link>
+                        {item.label}
                       </ListboxItem>
                     ))}
                   </Listbox>
@@ -242,8 +323,111 @@ export const Navbar = () => {
           className="hidden sm:flex basis-1/5 sm:basis-full"
           justify="end"
         >
-          <NavbarItem className="hidden lg:flex">{searchInput}</NavbarItem>
+          <NavbarItem
+            className="hidden lg:flex bg-slate-50 w-12 h-12 items-center justify-center"
+            style={{ borderRadius: "20px" }}
+            onClick={() => handleOpen("4xl")} // Open modal when icon is clicked
+          >
+            <svg
+              aria-hidden="true"
+              className="w-[26px] h-[26px] text-gray-800 dark:text-white"
+              fill="none"
+              height="24"
+              viewBox="0 0 24 24"
+              width="24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="m21 21-3.5-3.5M17 10a7 7 0 1 1-14 0 7 7 0 0 1 14 0Z"
+                stroke="currentColor"
+                strokeLinecap="round"
+                strokeWidth="2"
+              />
+            </svg>
+          </NavbarItem>
         </NavbarContent>
+
+        {/* search bắt đầu từ loại, tỉnh thành, cho tới khoảng giá, còn page với limit chắc quẳng vô page */}
+        <Modal
+          isDismissable={false}
+          isOpen={isOpen}
+          size={"4xl"}
+          onClose={onClose}
+        >
+          <ModalContent>
+            <ModalBody className="modal-css">
+              <ModalHeader>Loại bất động sản</ModalHeader>
+              <Autocomplete
+                className="max-w-xs"
+                defaultItems={projectMenuItems}
+                selectedKey={key}
+                variant="bordered"
+                onSelectionChange={(newKey) => {
+                  if (newKey !== null) {
+                    setValue(newKey.toString());
+                  }
+                }} // Chỉ cập nhật giá trị khi chọn mục
+                onClose={() => {
+                  // Không gọi setTouched hoặc đóng khi chọn
+                }}
+              >
+                {(item) => (
+                  <AutocompleteItem
+                    key={item.href}
+                    className=""
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {item.label}
+                  </AutocompleteItem>
+                )}
+              </Autocomplete>
+              <Autocomplete
+                className="max-w-xs"
+                defaultItems={provinceData} // Hiển thị các tỉnh lấy từ API
+                selectedKey={selectedProvince} // Tỉnh đã chọn
+                onSelectionChange={(newKey) => {
+                  if (newKey !== null) {
+                    setSelectedProvince(newKey); // Cập nhật tỉnh đã chọn
+                  }
+                }}
+              >
+                {provinceData &&
+                  provinceData?.map((province: any) => (
+                    <AutocompleteItem
+                      key={province.code}
+                      data-value={province.id}
+                    >
+                      {province.name} {/* Hiển thị tên tỉnh */}
+                    </AutocompleteItem>
+                  ))}
+              </Autocomplete>
+
+              {/* Autocomplete cho quận huyện (chỉ hiện khi đã chọn tỉnh) */}
+              {selectedProvince && (
+                <Autocomplete
+                  className="max-w-xs"
+                  defaultItems={districtData} // Hiển thị các quận huyện theo tỉnh đã chọn
+                  selectedKey={selectedDistrict} // Quận huyện đã chọn
+                  onSelectionChange={(newKey) => {
+                    if (newKey !== null) {
+                      setSelectedDistrict(newKey); // Cập nhật quận huyện đã chọn
+                    }
+                  }}
+                >
+                  {districtData &&
+                    districtData?.map((district: any) => (
+                      <AutocompleteItem
+                        key={district.code}
+                        data-value={district.code}
+                      >
+                        {district.name} {/* Hiển thị tên quận huyện */}
+                      </AutocompleteItem>
+                    ))}
+                </Autocomplete>
+              )}
+            </ModalBody>
+          </ModalContent>
+        </Modal>
 
         <NavbarContent className="sm:hidden basis-1 pl-4" justify="end">
           <Link isExternal aria-label="Github" href={siteConfig.links.github} />
@@ -255,11 +439,9 @@ export const Navbar = () => {
           {searchInput}
           <div className="mx-4 mt-2 flex flex-col gap-2">
             <Listbox aria-label="Project List" className="lisbox">
-              {projectMenuItems.map((item, index) => (
-                <ListboxItem key={item.href} value={item.href}>
-                  <Link href={item.href} size="lg">
-                    {item.label}
-                  </Link>
+              {projectMenuItems.map((item) => (
+                <ListboxItem key={item.href} href={item.href} value={item.href}>
+                  {item.label}
                 </ListboxItem>
               ))}
             </Listbox>

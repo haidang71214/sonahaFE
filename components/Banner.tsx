@@ -21,9 +21,6 @@ const BannerComponent = () => {
     return data.map((item: any, index: number) => {
       return (
         <div key={index}>
-          {/* Hiển thị title của banner */}
-          <h3>{item.title}</h3>
-          {/* Hiển thị hình ảnh banner */}
           <img alt={item.title} src={item.image_url} />
         </div>
       );
@@ -31,7 +28,7 @@ const BannerComponent = () => {
   };
 
   return (
-    <div className="h-[100%] w-full" style={{ position: "relative" }}>
+    <div className="h-[100vh] w-full relative" >
       <Carousel className="bannerhehe" style={{ top: "-50px" }}>
         {renderBanner()}
       </Carousel>

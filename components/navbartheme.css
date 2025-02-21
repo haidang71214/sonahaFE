@@ -104,3 +104,20 @@
 .logo{
   opacity: 0.8;
 }
+/* Loại bỏ border bên trong Autocomplete */
+input {
+  border: none !important; /* Xóa border của input */
+}
+
+.Autocomplete {
+  border: none !important; /* Xóa border của Autocomplete */
+}
+/* Loại bỏ đường viền khi nhấp vào input */
+input:focus {
+  outline: none !important;  /* Loại bỏ đường viền focus */
+  border: none !important;   /* Loại bỏ border */
+}
+/* ý là tui sửa thuộc tính thư viện ổn kh ? nó ảnh hưởng tới responsive k  */
+.modal-css{
+  gap: 0 !important
+}

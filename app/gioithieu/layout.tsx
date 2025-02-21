@@ -1,4 +1,4 @@
-export default function DuanLayout({
+export default function GioiThieuLayout({
    children,
  }: {
    children: React.ReactNode;

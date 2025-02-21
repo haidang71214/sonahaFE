@@ -2,7 +2,7 @@ import BannerComponent from "../../components/Banner";
 
 import SidebarNav from "@/components/SidebarNav";
 
-export default function DuanLayout({
+export default function LocDuAn({
   children,
 }: {
   children: React.ReactNode;
